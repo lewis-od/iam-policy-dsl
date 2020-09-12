@@ -1,2 +1,2 @@
-rootProject.name = "aws-policy-dsl"
+rootProject.name = "iam-policy-dsl"
 
