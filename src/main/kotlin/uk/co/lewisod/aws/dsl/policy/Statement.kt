@@ -1,18 +1,28 @@
 package uk.co.lewisod.aws.dsl.policy
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.Collections
 
+@Serializable
 enum class Effect {
-    ALLOW,
-    DENY
+    @SerialName("Allow") ALLOW,
+    @SerialName("Deny") DENY
 }
 
+@Serializable
 data class Statement internal constructor(
-    val sid: String,
-    val effect: Effect,
-    val action: List<String>,
-    val resource: String
+    val Sid: String,
+    val Effect: Effect,
+    val Action: List<String>,
+    val Resource: String
 )
+
+fun Statement.toJson(): String {
+    return Json.encodeToString(this)
+}
 
 class StatementBuilder internal constructor() {
 

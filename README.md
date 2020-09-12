@@ -3,7 +3,7 @@ A Kotlin DSL for creating AWS IAM Policy documents
 
 ## Usage
 ```kotlin
-policy("2012-10-17") {
+val myPolicy: Policy = policy("2012-10-17") {
     statement("EC2FullAccess") {
         effect(ALLOW)
         action("ec2:*")
@@ -16,8 +16,9 @@ policy("2012-10-17") {
         resource("arn:aws:s3:::prod-bucket")
     }
 }
+val policyDocument: String = myPolicy.toJson()
 ```
-will return a `Policy` object, which when serialized to JSON will be
+`policyDocument` will have the value:
 ```json
 {
     "Version": "2012-10-17",

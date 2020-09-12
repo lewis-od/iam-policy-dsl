@@ -1,13 +1,21 @@
 package uk.co.lewisod.aws.dsl.policy
 
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.Collections
 
 private const val DEFAULT_VERSION: String = "2012-10-17"
 
+@Serializable
 data class Policy internal constructor(
-    val version: String = DEFAULT_VERSION,
-    val statements: List<Statement>
+    val Version: String = DEFAULT_VERSION,
+    val Statement: List<Statement>
 )
+
+fun Policy.toJson(): String {
+    return Json.encodeToString(this)
+}
 
 class PolicyBuilder internal constructor() {
 

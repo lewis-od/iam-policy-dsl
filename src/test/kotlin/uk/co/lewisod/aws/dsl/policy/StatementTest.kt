@@ -3,6 +3,7 @@ package uk.co.lewisod.aws.dsl.policy
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.skyscreamer.jsonassert.JSONAssert
 
 internal class StatementTest {
 
@@ -41,5 +42,20 @@ internal class StatementTest {
             builder.build("sid")
         }.isInstanceOf(InvalidStatementException::class.java)
             .hasMessageContaining("Statement missing value for field")
+    }
+
+    @Test
+    fun `Serialize to JSON`() {
+        val statement = Statement("sid", Effect.ALLOW, listOf("action1", "action2"), "resource")
+        val expectedJson = """
+            {
+              "Sid": "sid",
+              "Effect": "Allow",
+              "Action": ["action1", "action2"],
+              "Resource": "resource"
+            }
+        """.trimIndent()
+
+        JSONAssert.assertEquals(expectedJson, statement.toJson(), true)
     }
 }
