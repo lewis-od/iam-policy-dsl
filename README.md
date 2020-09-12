@@ -1,4 +1,4 @@
-# AWS Policy DSL
+# IAM Policy DSL
 A Kotlin DSL for creating AWS IAM Policy documents
 
 ## Usage
@@ -43,3 +43,6 @@ val policyDocument: String = myPolicy.toJson()
     ]
 }
 ```
+
+## ToDo
+- [ ] Support conditional policies
