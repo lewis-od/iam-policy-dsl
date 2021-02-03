@@ -7,18 +7,34 @@ import java.util.Collections
 
 private const val DEFAULT_VERSION: String = "2012-10-17"
 
+/**
+ * Represents an IAM policy. Built by the [policy] function
+ */
 @Serializable
 data class Policy internal constructor(
     val Version: String = DEFAULT_VERSION,
     val Statement: List<Statement>
 )
 
+/**
+ * Convert the [Policy] to it's AWS-compliant JSON format
+ */
 fun Policy.toJson(): String = Json.encodeToString(this)
 
 class PolicyBuilder internal constructor() {
 
     private var statements = mutableListOf<Statement>()
 
+    /**
+     * Declares a [statement](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_statement.html)
+     * inside the [Policy]
+     *
+     * @param sid The SID of the statement
+     * @param statementBuilderBlock A function with receiver of type [StatementBuilder] tht defines the statement
+     * contents
+     * @return A [Statement] instance, as defined by [statementBuilderBlock]
+     * @throws InvalidStatementException
+     */
     fun statement(sid: String, statementBuilderBlock: StatementBuilder.() -> Unit) {
         val statementBuilder = StatementBuilder()
         statementBuilderBlock.invoke(statementBuilder)
@@ -36,11 +52,33 @@ class PolicyBuilder internal constructor() {
 
 class InvalidPolicyException(message: String) : RuntimeException(message)
 
-fun policy(builderBlock: PolicyBuilder.() -> Unit): Policy {
-    return policy(DEFAULT_VERSION, builderBlock)
-}
-
-fun policy(version: String, builderBlock: PolicyBuilder.() -> Unit): Policy {
+/**
+ * Top-level function for defining a policy. Allows defining a policy like
+ *
+ * ```kotlin
+ * val policy = policy {
+ *   statement("EC2FullAccess") {
+ *     effect(ALLOW)
+ *     action("ec2:*")
+ *     resource("*")
+ *   }
+ *   statement("S3ProdAccess") {
+ *     effect(ALLOW)
+ *     action("s3:ListObjects")
+ *     action("s3:GetObject")
+ *     resource("arn:aws:s3:::prod-bucket")
+ *   }
+ * }
+ * ```
+ *
+ * @param version The [version](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_version.html)
+ * of the policy
+ * @param builderBlock A function with receiver of type [PolicyBuilder] that defines the policy contents
+ * @return A [Policy] instance, as defined by the [builderBlock]
+ * @throws InvalidPolicyException
+ * @throws InvalidStatementException
+ */
+fun policy(version: String = DEFAULT_VERSION, builderBlock: PolicyBuilder.() -> Unit): Policy {
     val builder = PolicyBuilder()
     builderBlock.invoke(builder)
     return builder.build(version)

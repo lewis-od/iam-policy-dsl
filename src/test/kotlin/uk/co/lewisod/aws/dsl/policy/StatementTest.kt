@@ -33,7 +33,7 @@ internal class StatementTest {
     }
 
     @Test
-    fun `Throws an exception when a required field is not provided`() {
+    fun `Throws an exception when resource is not provided`() {
         val builder = StatementBuilder()
         builder.effect(Effect.ALLOW)
         builder.action("action")
@@ -41,7 +41,19 @@ internal class StatementTest {
         assertThatThrownBy {
             builder.build("sid")
         }.isInstanceOf(InvalidStatementException::class.java)
-            .hasMessageContaining("Statement missing value for field")
+            .hasMessageContaining("Statement must specify a resource")
+    }
+
+    @Test
+    fun `Throws an exception when effect is not provided`() {
+        val builder = StatementBuilder()
+        builder.resource("resource")
+        builder.action("action")
+
+        assertThatThrownBy {
+            builder.build("sid")
+        }.isInstanceOf(InvalidStatementException::class.java)
+            .hasMessageContaining("Statement must specify an effect")
     }
 
     @Test
