@@ -1,4 +1,4 @@
-package uk.co.lewisod.aws.dsl.policy
+package com.github.lewisod.aws.dsl
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
