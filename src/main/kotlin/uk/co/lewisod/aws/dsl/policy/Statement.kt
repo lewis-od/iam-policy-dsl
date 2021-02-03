@@ -12,6 +12,9 @@ enum class Effect {
     @SerialName("Deny") DENY
 }
 
+/**
+ * Represents a statement within an IAM policy
+ */
 @Serializable
 data class Statement internal constructor(
     val Sid: String,
@@ -20,6 +23,9 @@ data class Statement internal constructor(
     val Resource: String
 )
 
+/**
+ * Convert the [Statement] to it's AWS-compliant JSON
+ */
 fun Statement.toJson(): String = Json.encodeToString(this)
 
 class StatementBuilder internal constructor() {
@@ -28,8 +34,22 @@ class StatementBuilder internal constructor() {
     private val actions = mutableListOf<String>()
     private var resource: String? = null
 
+    /**
+     * Sets the [effect](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html) field
+     * of the statement
+     */
     fun effect(effect: Effect) { this.effect = effect }
+
+    /**
+     * Sets the [action](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html) field
+     * of the statement
+     */
     fun action(action: String) { this.actions.add(action) }
+
+    /**
+     * Sets the [resource](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html)
+     * field of the statement
+     */
     fun resource(resource: String) { this.resource = resource }
 
     internal fun build(sid: String): Statement {
@@ -37,11 +57,12 @@ class StatementBuilder internal constructor() {
             throw InvalidStatementException("A statement must contain at least 1 action")
         }
 
-        try {
-            return Statement(sid, effect!!, Collections.unmodifiableList(actions), resource!!)
-        } catch (e: NullPointerException) {
-            throw InvalidStatementException("Statement missing value for field", e)
-        }
+        return Statement(
+            sid,
+            effect ?: throw InvalidStatementException("Statement must specify an effect"),
+            Collections.unmodifiableList(actions),
+            resource ?: throw InvalidStatementException("Statement must specify a resource")
+        )
     }
 }
 

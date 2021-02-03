@@ -45,4 +45,6 @@ val policyDocument: String = myPolicy.toJson()
 ```
 
 ## ToDo
+- [ ] Support specifying a `Principal` block in a statement
 - [ ] Support conditional policies
+- [ ] Support `NotAction`, `NotResource`, and `NotPrincipal`
