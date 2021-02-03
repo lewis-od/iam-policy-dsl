@@ -17,10 +17,10 @@ enum class Effect {
  */
 @Serializable
 data class Statement internal constructor(
-    val Sid: String,
-    val Effect: Effect,
-    val Action: List<String>,
-    val Resource: String
+    @SerialName("Sid") val sid: String,
+    @SerialName("Effect") val effect: Effect,
+    @SerialName("Action") val action: List<String>,
+    @SerialName("Resource") val resource: String
 )
 
 /**
