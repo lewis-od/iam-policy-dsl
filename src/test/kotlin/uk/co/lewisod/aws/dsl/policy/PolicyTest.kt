@@ -7,7 +7,7 @@ import org.skyscreamer.jsonassert.JSONAssert
 internal class PolicyTest {
 
     @Test
-    fun `Specified version`() {
+    fun `Builds a policy with the specified version`() {
         val statement = Statement("sid", Effect.ALLOW, listOf("action"), "resource")
         val expectedPolicy = Policy("version", listOf(statement))
 
@@ -23,7 +23,7 @@ internal class PolicyTest {
     }
 
     @Test
-    fun `Unspecified version`() {
+    fun `Builds a policy with the default version`() {
         val statement = Statement("sid", Effect.ALLOW, listOf("action"), "resource")
         val expectedPolicy = Policy("2012-10-17", listOf(statement))
 
@@ -39,7 +39,7 @@ internal class PolicyTest {
     }
 
     @Test
-    fun `Serialize to json`() {
+    fun `Serializes to JSON correctly`() {
         val statement = Statement("sid", Effect.ALLOW, listOf("action"), "resource")
         val policy = Policy("2012-10-17", listOf(statement))
 

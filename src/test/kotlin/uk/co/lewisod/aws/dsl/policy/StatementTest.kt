@@ -8,7 +8,7 @@ import org.skyscreamer.jsonassert.JSONAssert
 internal class StatementTest {
 
     @Test
-    fun `Build statement`() {
+    fun `Builds a statement when provided with a valid configuration`() {
         val builder = StatementBuilder()
         builder.resource("resource")
         builder.effect(Effect.ALLOW)
@@ -21,7 +21,7 @@ internal class StatementTest {
     }
 
     @Test
-    fun `No actions`() {
+    fun `Throws an exception when no actions supplied`() {
         val builder = StatementBuilder()
         builder.resource("resource")
         builder.effect(Effect.ALLOW)
@@ -33,7 +33,7 @@ internal class StatementTest {
     }
 
     @Test
-    fun `Missing field`() {
+    fun `Throws an exception when a required field is not provided`() {
         val builder = StatementBuilder()
         builder.effect(Effect.ALLOW)
         builder.action("action")
@@ -45,7 +45,7 @@ internal class StatementTest {
     }
 
     @Test
-    fun `Serialize to JSON`() {
+    fun `Serializes to JSON correctly`() {
         val statement = Statement("sid", Effect.ALLOW, listOf("action1", "action2"), "resource")
         val expectedJson = """
             {
