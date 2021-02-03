@@ -1,4 +1,4 @@
-package uk.co.lewisod.aws.dsl.policy
+package com.github.lewisod.aws.dsl
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

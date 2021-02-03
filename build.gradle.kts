@@ -5,8 +5,8 @@ plugins {
     id("org.jetbrains.dokka") version "1.4.20"
 }
 
-group = "uk.co.lewisod"
-version = "1.0-SNAPSHOT"
+group = "com.github.lewisod"
+version = "0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
