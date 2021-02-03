@@ -20,9 +20,7 @@ data class Statement internal constructor(
     val Resource: String
 )
 
-fun Statement.toJson(): String {
-    return Json.encodeToString(this)
-}
+fun Statement.toJson(): String = Json.encodeToString(this)
 
 class StatementBuilder internal constructor() {
 

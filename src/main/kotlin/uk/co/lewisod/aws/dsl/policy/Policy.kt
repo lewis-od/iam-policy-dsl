@@ -13,9 +13,7 @@ data class Policy internal constructor(
     val Statement: List<Statement>
 )
 
-fun Policy.toJson(): String {
-    return Json.encodeToString(this)
-}
+fun Policy.toJson(): String = Json.encodeToString(this)
 
 class PolicyBuilder internal constructor() {
 
