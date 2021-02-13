@@ -9,7 +9,7 @@ plugins {
 }
 
 object ProjectInfo {
-    val version = "1.0-SNAPSHOT"
+    val version = "1.0"
     val artifactId = "iam-policy-dsl"
     val description = "A Kotlin DSL for declaring AWS IAM policy documents"
 
