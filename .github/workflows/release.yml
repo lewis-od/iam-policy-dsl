@@ -28,18 +28,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Set environment variables
-        run: |
-          export SONATYPE_USER="${{ secrets.SONATYPE_USER }}"
-          export SONATYPE_PASSWORD="${{ secrets.SONATYPE_PASSWORD }}"
-          export SIGNING_KEY="${{ secrets.SIGNING_KEY }}"
-          export SIGNING_KEY_PASSWORD="${{ secrets.SIGNING_KEY_PASSWORD }}"
-
       - name: Build
         run: ./gradlew build
 
+      - name: Create signing key file
+        run: echo "$SIGNING_KEY" > signing-key.pgp
+
       - name: Publish to Sonatype
-        run: ./gradlew publish
+        run: |
+          SONATYPE_USER="${{ secrets.SONATYPE_USER }}" \
+          SONATYPE_PASSWORD="${{ secrets.SONATYPE_PASSWORD }}" \
+          SIGNING_KEY_FILE="signing-key.pgp" \
+          SIGNING_KEY_PASSWORD="${{ secrets.SIGNING_KEY_PASSWORD }}" \
+          ./gradlew publish
+
+      - name: Delete signing key file
+        run: rm signing-key.pgp
 
       - name: Create Github release
         id: create-release

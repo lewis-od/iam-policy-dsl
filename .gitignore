@@ -48,3 +48,6 @@ out/
 
 ### macOS
 .DS_Store
+
+# Release signing
+signing-key.gpg

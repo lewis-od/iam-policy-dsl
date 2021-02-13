@@ -95,8 +95,11 @@ publishing {
 }
 
 with(signing) {
-    val signingKey = System.getenv("SIGNING_KEY")
-    val signingKeyPassword = System.getenv("SIGNING_KEY_PASSWORD")
-    useInMemoryPgpKeys(signingKey, signingKeyPassword)
-    sign(publishing.publications.getByName("maven"))
+    val keyFile = System.getenv("SIGNING_KEY_FILE")
+    if (keyFile != null && keyFile.isNotBlank()) {
+        val signingKey = File(keyFile).readText()
+        val signingKeyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+        useInMemoryPgpKeys(signingKey, signingKeyPassword)
+        sign(publishing.publications.getByName("maven"))
+    }
 }
