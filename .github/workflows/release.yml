@@ -32,18 +32,18 @@ jobs:
         run: ./gradlew build
 
       - name: Create signing key file
-        run: echo "$SIGNING_KEY" > signing-key.pgp
+        run: echo "$SIGNING_KEY" > signing-key.gpg
 
       - name: Publish to Sonatype
         run: |
           SONATYPE_USER="${{ secrets.SONATYPE_USER }}" \
           SONATYPE_PASSWORD="${{ secrets.SONATYPE_PASSWORD }}" \
-          SIGNING_KEY_FILE="signing-key.pgp" \
-          SIGNING_KEY_PASSWORD="${{ secrets.SIGNING_KEY_PASSWORD }}" \
+          SIGNING_KEY_FILE="signing-key.gpg" \
+          SIGNING_KEY_PASSWORD='${{ secrets.SIGNING_KEY_PASSWORD }}' \
           ./gradlew publish
 
       - name: Delete signing key file
-        run: rm signing-key.pgp
+        run: rm signing-key.gpg
 
       - name: Create Github release
         id: create-release
