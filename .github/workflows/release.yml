@@ -35,12 +35,12 @@ jobs:
         run: echo "$SIGNING_KEY" > signing-key.gpg
 
       - name: Publish to Sonatype
-        run: |
-          SONATYPE_USER="${{ secrets.SONATYPE_USER }}" \
-          SONATYPE_PASSWORD="${{ secrets.SONATYPE_PASSWORD }}" \
-          SIGNING_KEY_FILE="signing-key.gpg" \
-          SIGNING_KEY_PASSWORD='${{ secrets.SIGNING_KEY_PASSWORD }}' \
-          ./gradlew publish
+        env:
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SIGNING_KEY_FILE: signing-key.gpg
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: ./gradlew publish
 
       - name: Delete signing key file
         run: rm signing-key.gpg
