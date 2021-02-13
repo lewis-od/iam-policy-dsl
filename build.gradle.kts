@@ -3,10 +3,22 @@ plugins {
     kotlin("jvm") version "1.4.10"
     kotlin("plugin.serialization") version "1.4.10"
     id("org.jetbrains.dokka") version "1.4.20"
+    `java-library`
+    `maven-publish`
+    signing
+}
+
+object ProjectInfo {
+    val version = "1.0"
+    val artifactId = "iam-policy-dsl"
+    val description = "A Kotlin DSL for declaring AWS IAM policy documents"
+
+    val url = "https://github.com/lewis-od/iam-policy-dsl"
+    val scm = "scm:git:$url"
 }
 
 group = "com.github.lewisod"
-version = "0.1-SNAPSHOT"
+version = ProjectInfo.version
 
 repositories {
     mavenCentral()
@@ -26,4 +38,65 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.github.lewis-od"
+            version = ProjectInfo.version
+            artifactId = ProjectInfo.artifactId
+            pom {
+                name.set(ProjectInfo.artifactId)
+                description.set(ProjectInfo.description)
+                url.set(ProjectInfo.url)
+                licenses {
+                    license {
+                        name.set("Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        name.set("Lewis O'Driscoll")
+                    }
+                }
+                issueManagement {
+                    system.set("Github")
+                    url.set("${ProjectInfo.url}/issues")
+                }
+                scm {
+                    connection.set(ProjectInfo.scm)
+                    url.set(ProjectInfo.url)
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "sonatype"
+            url = uri(
+                if (ProjectInfo.version.contains("SNAPSHOT"))
+                    "https://oss.sonatype.org/content/repositories/snapshots/"
+                else
+                    "https://oss.sonatype.org/service/local/staging/deploy/maven2/")
+            credentials {
+                username = System.getenv("SONATYPE_USER")
+                password = System.getenv("SONATYPE_PASSWORD")
+            }
+        }
+    }
+}
+
+with(signing) {
+    val signingKey = System.getenv("SIGNING_KEY")
+    val signingKeyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+    useInMemoryPgpKeys(signingKey, signingKeyPassword)
+    sign(publishing.publications.getByName("maven"))
 }

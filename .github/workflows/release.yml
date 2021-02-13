@@ -1,0 +1,75 @@
+name: Release to maven central
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build and release
+    if: github.event.base_ref == 'refs/heads/master'
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: '11'
+
+      - name: Cache gradle
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Set environment variables
+        run: |
+          export SONATYPE_USER=${{ secrets.SONATYPE_USER }}
+          export SONATYPE_PASSWORD=${{ secrets.SONATYPE_PASSWORD }}
+          export SIGNING_KEY=${{ secrets.SIGNING_KEY }}
+          export SIGNING_KEY_PASSWORD=${{ secrets.SIGNING_KEY_PASSWORD }}
+
+      - name: Build
+        run: ./gradlew build
+
+      - name: Publish to Sonatype
+        run: ./gradlew publish
+
+      - name: Create Github release
+        id: create-release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload release assets
+        uses: actions/github-script@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs').promises;
+
+            const { repo: { owner, repo } } = context;
+            console.log({ owner, repo });
+
+            for (let file of await fs.readdir('./build/libs')) {
+              console.log('Uploading', file);
+
+              await github.repos.uploadReleaseAsset({
+                owner, repo,
+                release_id: ${{ steps.create-release.outputs.id }},
+                name: file,
+                data: await fs.readFile(`./build/libs/${file}`)
+              });
+            }
