@@ -1,5 +1,5 @@
 # Releasing
-To release to maven central, first set the correct version number in [build.gradle.kts](), then create tag for the
+To release to maven central, first set the correct version number in [build.gradle.kts](build.gradle.kts), then create tag for the
 release with:
 ```shell
 git tag -s v1.0 -m 'Release 1.0'
