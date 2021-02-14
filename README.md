@@ -2,6 +2,12 @@
 A Kotlin DSL for creating AWS IAM Policy documents
 
 ## Usage
+Add to your Gradle dependencies as:
+```kotlin
+implementation("com.github.lewis-od:iam-policy-dsl:1.0")
+```
+
+The DSL can then be used like:
 ```kotlin
 val myPolicy: Policy = policy("2012-10-17") {
     statement("EC2FullAccess") {
