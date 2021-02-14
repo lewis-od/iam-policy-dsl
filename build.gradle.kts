@@ -58,7 +58,7 @@ publishing {
                 licenses {
                     license {
                         name.set("MIT License")
-                        url.set("https://github.com/lewis-od/iam-policy-dsl/LICENSE.md")
+                        url.set("https://github.com/lewis-od/iam-policy-dsl/blob/main/LICENSE.md")
                     }
                 }
                 developers {
