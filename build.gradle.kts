@@ -57,8 +57,8 @@ publishing {
                 url.set(ProjectInfo.url)
                 licenses {
                     license {
-                        name.set("Apache License, Version 2.0")
-                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                        name.set("MIT License")
+                        url.set("https://github.com/lewis-od/iam-policy-dsl/LICENSE.md")
                     }
                 }
                 developers {
