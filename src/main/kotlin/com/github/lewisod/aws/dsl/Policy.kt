@@ -34,7 +34,7 @@ class PolicyBuilder internal constructor() {
      * @return A [Statement] instance, as defined by [statementBuilderBlock]
      * @throws InvalidStatementException
      */
-    fun statement(sid: String, statementBuilderBlock: StatementBuilder.() -> Unit) {
+    fun statement(sid: String? = null, statementBuilderBlock: StatementBuilder.() -> Unit) {
         val statementBuilder = StatementBuilder()
         statementBuilderBlock.invoke(statementBuilder)
         this.statements.add(statementBuilder.build(sid))
