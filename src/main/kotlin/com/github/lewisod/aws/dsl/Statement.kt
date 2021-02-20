@@ -1,8 +1,16 @@
 package com.github.lewisod.aws.dsl
 
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import java.util.Collections
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.element
+import kotlinx.serialization.encoding.CompositeEncoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
 @Serializable
 enum class Effect {
@@ -13,17 +21,62 @@ enum class Effect {
 /**
  * Represents a statement within an IAM policy
  */
-@Serializable
+@Serializable(with = StatementSerializer::class)
 data class Statement internal constructor(
-    @SerialName("Sid") val sid: String? = null,
-    @SerialName("Effect") val effect: Effect,
-    @SerialName("Principal") val principal: Principal? = null,
-    @SerialName("NotPrincipal") val notPrincipal: Principal? = null,
-    @SerialName("Action") val action: List<String> = listOf(),
-    @SerialName("NotAction") val notAction: List<String> = listOf(),
-    @SerialName("Resource") val resource: String? = null,
-    @SerialName("NotResource") val notResource: String? = null
+    val effect: Effect,
+    val action: ActionElement,
+    val sid: String? = null,
+    val principal: PrincipalElement? = null,
+    val resource: ResourceElement? = null
 )
+
+object StatementSerializer : KSerializer<Statement> {
+
+    override fun serialize(encoder: Encoder, value: Statement) {
+        val composite = encoder.beginStructure(descriptor)
+        if (value.sid != null) {
+            composite.encodeStringElement(descriptor, 0, value.sid)
+        }
+        composite.encodeSerializableElement(descriptor, 1, Effect.serializer(), value.effect)
+        if (value.principal != null) {
+            val principalIndex = calculateElementIndex(value.principal, 2)
+            composite.encodeSerializableElement(descriptor, principalIndex, Principal.serializer(), value.principal.value)
+        }
+        encodeActions(composite, value.action)
+        if (value.resource != null) {
+            val resourceIndex = calculateElementIndex(value.resource, 6)
+            composite.encodeStringElement(descriptor, resourceIndex, value.resource.value)
+        }
+        composite.endStructure(descriptor)
+    }
+
+    private fun encodeActions(composite: CompositeEncoder, actionElement: ActionElement) {
+        val actionIndex = calculateElementIndex(actionElement, 4)
+        val actions = actionElement.value
+        if (actions.size > 1) {
+            composite.encodeSerializableElement(descriptor, actionIndex, ListSerializer(String.serializer()), actions)
+        } else {
+            composite.encodeStringElement(descriptor, actionIndex, actions.first())
+        }
+    }
+
+    private fun <T> calculateElementIndex(element: NegatablePolicyElement<T>, startIndex: Int): Int =
+        if (element.isNegated) startIndex + 1 else startIndex
+
+    // Not used
+    override fun deserialize(decoder: Decoder): Statement = Statement(Effect.ALLOW, ActionElement(listOf(), false))
+
+    override val descriptor: SerialDescriptor = buildClassSerialDescriptor("StatementSerializer") {
+        element<String>("Sid", isOptional = true)
+        element<Effect>("Effect")
+        element<Principal>("Principal", isOptional = true)
+        element<Principal>("NotPrincipal", isOptional = true)
+        element<List<String>>("Action", isOptional = true)
+        element<List<String>>("NotAction", isOptional = true)
+        element<String>("Resource", isOptional = true)
+        element<String>("NotResource", isOptional = true)
+    }
+}
 
 /**
  * Convert the [Statement] to it's AWS-compliant JSON
@@ -34,12 +87,9 @@ fun Statement.toJson(): String = JsonEncoder.serialize(Statement.serializer(), t
 class StatementBuilder internal constructor() {
 
     private var effect: Effect? = null
-    private val actions = mutableListOf<String>()
-    private val notActions = mutableListOf<String>()
-    private var resource: String? = null
-    private var notResource: String? = null
-    private var principal: Principal? = null
-    private var notPrincipal: Principal? = null
+    private var actions: ActionElement = ActionElement(mutableListOf(), isNegated = false)
+    private var resource: ResourceElement? = null
+    private var principal: PrincipalElement? = null
 
     /**
      * Sets the [Effect](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html) field
@@ -57,10 +107,10 @@ class StatementBuilder internal constructor() {
      * of the statement
      */
     fun action(vararg actions: String) {
-        if (this.notActions.isNotEmpty()) {
+        if (this.actions.isNegated && this.actions.value.isNotEmpty()) {
             throw InvalidStatementException("A statement can only specify one of Action or NotAction")
         }
-        this.actions.addAll(actions)
+        this.actions = ActionElement(this.actions.value + actions, isNegated = false)
     }
 
     /**
@@ -68,10 +118,10 @@ class StatementBuilder internal constructor() {
      * field of the statement
      */
     fun notAction(vararg actions: String) {
-        if (this.actions.isNotEmpty()) {
+        if (!this.actions.isNegated && this.actions.value.isNotEmpty()) {
             throw InvalidStatementException("A statement can only specify one of Action or NotAction")
         }
-        this.notActions.addAll(actions)
+        this.actions = ActionElement(this.actions.value + actions, isNegated = true)
     }
 
     /**
@@ -79,10 +129,10 @@ class StatementBuilder internal constructor() {
      * field of the statement
      */
     fun resource(resource: String) {
-        if (this.notResource != null) {
-            throw InvalidStatementException("A statement can only specify one of Resource or NotResource")
+        if (this.resource != null) {
+            throw InvalidStatementException("A statement can only specify one Resource")
         }
-        this.resource = resource
+        this.resource = ResourceElement(resource, isNegated = false)
     }
 
     /**
@@ -91,55 +141,46 @@ class StatementBuilder internal constructor() {
      */
     fun notResource(resource: String) {
         if (this.resource != null) {
-            throw InvalidStatementException("A statement can only specify one of Resource or NotResource")
+            throw InvalidStatementException("A statement can only specify one Resource")
         }
-        this.notResource = resource
+        this.resource = ResourceElement(resource, isNegated = true)
     }
 
     /**
      * Sets the [Principal](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html)
      * field of the statement
      */
-    fun principal(principalBuilderBlock: PrincipalBuilder.() -> Unit) {
-        if (this.principal != null || this.notPrincipal != null) {
-            throw InvalidStatementException("A statement can only specify one Principal")
-        }
-
-        val builder = PrincipalBuilder()
-        principalBuilderBlock.invoke(builder)
-        this.principal = builder.build()
-    }
+    fun principal(init: PrincipalBuilder.() -> Unit) =
+        createPrincipal(init, isNegated = false)
 
     /**
      * Sets the [NotPrincipal](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notprincipal.html)
      * field of the statement
      */
-    fun notPrincipal(principalBuilderBlock: PrincipalBuilder.() -> Unit) {
-        if (this.principal != null || this.notPrincipal != null) {
+    fun notPrincipal(init: PrincipalBuilder.() -> Unit) =
+        createPrincipal(init, isNegated = true)
+
+    private fun createPrincipal(init: PrincipalBuilder.() -> Unit, isNegated: Boolean) {
+        if (this.principal != null) {
             throw InvalidStatementException("A statement can only specify one Principal")
         }
 
         val builder = PrincipalBuilder()
-        principalBuilderBlock.invoke(builder)
-        this.principal = builder.build()
+        builder.init()
+        this.principal = PrincipalElement(builder.build(), isNegated)
     }
 
-    fun build(): Statement = build(null)
-
     internal fun build(sid: String?): Statement {
-        if (actions.isEmpty()) {
+        if (actions.value.isEmpty()) {
             throw InvalidStatementException("A statement must contain at least 1 Action")
         }
 
         return Statement(
-            sid,
             effect ?: throw InvalidStatementException("Statement must specify an effect"),
+            actions,
+            sid,
             principal,
-            notPrincipal,
-            Collections.unmodifiableList(actions),
-            Collections.unmodifiableList(notActions),
-            resource,
-            notResource
+            resource
         )
     }
 }

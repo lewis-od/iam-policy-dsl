@@ -8,7 +8,11 @@ internal class PolicyTest {
 
     @Test
     fun `Builds a policy with the specified version`() {
-        val statement = Statement("sid", Effect.ALLOW, action = listOf("action"), resource = "resource")
+        val statement = Statement(
+            Effect.ALLOW,
+            action = ActionElement(listOf("action")),
+            sid = "sid",
+            resource = ResourceElement("resource"))
         val expectedPolicy = Policy("version", listOf(statement))
 
         val policy = policy("version") {
@@ -24,7 +28,11 @@ internal class PolicyTest {
 
     @Test
     fun `Builds a policy with the default version`() {
-        val statement = Statement("sid", Effect.ALLOW, action = listOf("action"), resource = "resource")
+        val statement = Statement(
+            Effect.ALLOW,
+            action = ActionElement(listOf("action")),
+            sid = "sid",
+            resource = ResourceElement("resource"))
         val expectedPolicy = Policy("2012-10-17", listOf(statement))
 
         val policy = policy {
@@ -40,7 +48,11 @@ internal class PolicyTest {
 
     @Test
     fun `Serializes to JSON correctly`() {
-        val statement = Statement("sid", Effect.ALLOW, action = listOf("action"), resource = "resource")
+        val statement = Statement(
+            Effect.ALLOW,
+            action = ActionElement(listOf("action")),
+            sid = "sid",
+            resource = ResourceElement("resource"))
         val policy = Policy("2012-10-17", listOf(statement))
 
         val expectedJson = """
@@ -50,7 +62,7 @@ internal class PolicyTest {
                 {
                   "Sid": "sid",
                   "Effect": "Allow",
-                  "Action": ["action"],
+                  "Action": "action",
                   "Resource": "resource"
                 }
               ]

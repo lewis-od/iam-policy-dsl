@@ -23,7 +23,12 @@ internal class StatementTest {
         builder.action("action2")
         val builtStatement = builder.build("sid")
 
-        val expectedStatement = Statement("sid", Effect.ALLOW, action = listOf("action1", "action2"), resource = "resource")
+        val expectedStatement = Statement(
+            Effect.ALLOW,
+            action = ActionElement(listOf("action1", "action2")),
+            sid = "sid",
+            resource = ResourceElement("resource")
+        )
         assertThat(builtStatement).isEqualToComparingFieldByField(expectedStatement)
     }
 
@@ -70,7 +75,7 @@ internal class StatementTest {
         builder.resource("resource")
         assertThatThrownBy { builder.notResource("resource") }
             .isInstanceOf(InvalidStatementException::class.java)
-            .hasMessageContaining("A statement can only specify one of Resource or NotResource")
+            .hasMessageContaining("A statement can only specify one Resource")
     }
 
     @Test
@@ -78,7 +83,7 @@ internal class StatementTest {
         builder.notResource("resource")
         assertThatThrownBy { builder.resource("resource") }
             .isInstanceOf(InvalidStatementException::class.java)
-            .hasMessageContaining("A statement can only specify one of Resource or NotResource")
+            .hasMessageContaining("A statement can only specify one Resource")
     }
 
     @Test
@@ -114,8 +119,33 @@ internal class StatementTest {
     }
 
     @Test
+    fun `With a single action serializes to JSON correctly`() {
+        val statement = Statement(
+            Effect.ALLOW,
+            action = ActionElement(listOf("action")),
+            sid = "sid"
+        )
+        val expectedJson = """
+            {
+              "Sid": "sid",
+              "Effect": "Allow",
+              "Action": "action"
+            }
+        """.trimIndent()
+
+        val actualJson = statement.toJson()
+
+        JSONAssert.assertEquals(expectedJson, actualJson, true)
+    }
+
+    @Test
     fun `With no Principal serializes to JSON correctly`() {
-        val statement = Statement("sid", Effect.ALLOW, action = listOf("action1", "action2"), resource = "resource")
+        val statement = Statement(
+            Effect.ALLOW,
+            action = ActionElement(listOf("action1", "action2")),
+            sid = "sid",
+            resource = ResourceElement("resource")
+        )
         val expectedJson = """
             {
               "Sid": "sid",
@@ -133,13 +163,43 @@ internal class StatementTest {
     @Test
     fun `With no resource serializes to JSON correctly`() {
         val principal = Principal(PrincipalType.AWS, listOf("account"))
-        val statement = Statement("sid", Effect.ALLOW, principal =  principal, action = listOf("action1", "action2"))
+        val statement = Statement(
+            Effect.ALLOW,
+            action = ActionElement(listOf("action1", "action2")),
+            sid = "sid",
+            principal = PrincipalElement(principal)
+        )
         val expectedJson = """
             {
               "Sid": "sid",
               "Effect": "Allow",
               "Action": ["action1", "action2"],
               "Principal": { "AWS": "account" }
+            }
+        """.trimIndent()
+
+        val actualJson = statement.toJson()
+
+        JSONAssert.assertEquals(expectedJson, actualJson, true)
+    }
+
+    @Test
+    fun `With negated elements serializes to JSON correctly`() {
+        val principal = Principal(PrincipalType.AWS, listOf("account"))
+        val statement = Statement(
+            Effect.ALLOW,
+            action = ActionElement(listOf("action1", "action2"), isNegated = true),
+            sid = "sid",
+            principal = PrincipalElement(principal, isNegated = true),
+            resource = ResourceElement("resource", isNegated = true)
+        )
+        val expectedJson = """
+            {
+              "Sid": "sid",
+              "Effect": "Allow",
+              "NotAction": ["action1", "action2"],
+              "NotPrincipal": { "AWS": "account" },
+              "NotResource": "resource"
             }
         """.trimIndent()
 
