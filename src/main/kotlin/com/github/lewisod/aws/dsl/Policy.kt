@@ -2,8 +2,6 @@ package com.github.lewisod.aws.dsl
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.util.Collections
 
 private const val DEFAULT_VERSION: String = "2012-10-17"
@@ -13,14 +11,14 @@ private const val DEFAULT_VERSION: String = "2012-10-17"
  */
 @Serializable
 data class Policy internal constructor(
-    @SerialName("Version") val version: String = DEFAULT_VERSION,
+    @SerialName("Version") val version: String,
     @SerialName("Statement") val statement: List<Statement>
 )
 
 /**
  * Convert the [Policy] to it's AWS-compliant JSON format
  */
-fun Policy.toJson(): String = Json.encodeToString(this)
+fun Policy.toJson(): String = JsonEncoder.serialize(Policy.serializer(), this)
 
 class PolicyBuilder internal constructor() {
 
@@ -65,8 +63,7 @@ class InvalidPolicyException(message: String) : RuntimeException(message)
  *   }
  *   statement("S3ProdAccess") {
  *     effect(ALLOW)
- *     action("s3:ListObjects")
- *     action("s3:GetObject")
+ *     action("s3:ListObjects", "s3:GetObject")
  *     resource("arn:aws:s3:::prod-bucket")
  *   }
  * }

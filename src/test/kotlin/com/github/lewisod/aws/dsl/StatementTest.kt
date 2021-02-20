@@ -16,7 +16,7 @@ internal class StatementTest {
         builder.action("action2")
         val builtStatement = builder.build("sid")
 
-        val expectedStatement = Statement("sid", Effect.ALLOW, listOf("action1", "action2"), "resource")
+        val expectedStatement = Statement("sid", Effect.ALLOW, null, listOf("action1", "action2"), "resource")
         assertThat(builtStatement).isEqualToComparingFieldByField(expectedStatement)
     }
 
@@ -33,18 +33,6 @@ internal class StatementTest {
     }
 
     @Test
-    fun `Throws an exception when resource is not provided`() {
-        val builder = StatementBuilder()
-        builder.effect(Effect.ALLOW)
-        builder.action("action")
-
-        assertThatThrownBy {
-            builder.build("sid")
-        }.isInstanceOf(InvalidStatementException::class.java)
-            .hasMessageContaining("Statement must specify a resource")
-    }
-
-    @Test
     fun `Throws an exception when effect is not provided`() {
         val builder = StatementBuilder()
         builder.resource("resource")
@@ -57,8 +45,22 @@ internal class StatementTest {
     }
 
     @Test
-    fun `Serializes to JSON correctly`() {
-        val statement = Statement("sid", Effect.ALLOW, listOf("action1", "action2"), "resource")
+    fun `Throws an exception two principals are provided`() {
+        val builder = StatementBuilder()
+        builder.principal {
+            aws("account-1")
+        }
+        assertThatThrownBy {
+            builder.principal {
+                aws("account-2")
+            }
+        }.isInstanceOf(InvalidStatementException::class.java)
+            .hasMessageContaining("A statement can only have one policy")
+    }
+
+    @Test
+    fun `With no principal serializes to JSON correctly`() {
+        val statement = Statement("sid", Effect.ALLOW, null, listOf("action1", "action2"), "resource")
         val expectedJson = """
             {
               "Sid": "sid",
@@ -68,6 +70,26 @@ internal class StatementTest {
             }
         """.trimIndent()
 
-        JSONAssert.assertEquals(expectedJson, statement.toJson(), true)
+        val actualJson = statement.toJson()
+
+        JSONAssert.assertEquals(expectedJson, actualJson, true)
+    }
+
+    @Test
+    fun `With no resource serializes to JSON correctly`() {
+        val principal = Principal(PrincipalType.AWS, listOf("account"))
+        val statement = Statement("sid", Effect.ALLOW, principal, listOf("action1", "action2"), null)
+        val expectedJson = """
+            {
+              "Sid": "sid",
+              "Effect": "Allow",
+              "Action": ["action1", "action2"],
+              "Principal": { "AWS": "account" }
+            }
+        """.trimIndent()
+
+        val actualJson = statement.toJson()
+
+        JSONAssert.assertEquals(expectedJson, actualJson, true)
     }
 }
