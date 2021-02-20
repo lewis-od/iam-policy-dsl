@@ -23,7 +23,7 @@ data class Principal internal constructor(
     val values: List<String>
 )
 
-object PrincipalSerializer : KSerializer<Principal> {
+private object PrincipalSerializer : KSerializer<Principal> {
 
     override fun serialize(encoder: Encoder, value: Principal) {
         val descriptorIndex: Int = getIndexForType(value.type)
