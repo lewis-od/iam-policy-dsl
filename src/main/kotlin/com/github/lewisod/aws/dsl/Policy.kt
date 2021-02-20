@@ -20,6 +20,7 @@ data class Policy internal constructor(
  */
 fun Policy.toJson(): String = JsonEncoder.serialize(Policy.serializer(), this)
 
+@PolicyElementBuilder
 class PolicyBuilder internal constructor() {
 
     private var statements = mutableListOf<Statement>()

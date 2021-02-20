@@ -30,6 +30,7 @@ data class Statement internal constructor(
  */
 fun Statement.toJson(): String = JsonEncoder.serialize(Statement.serializer(), this)
 
+@PolicyElementBuilder
 class StatementBuilder internal constructor() {
 
     private var effect: Effect? = null
@@ -122,6 +123,8 @@ class StatementBuilder internal constructor() {
         principalBuilderBlock.invoke(builder)
         this.principal = builder.build()
     }
+
+    fun build(): Statement = build(null)
 
     internal fun build(sid: String?): Statement {
         if (actions.isEmpty()) {
