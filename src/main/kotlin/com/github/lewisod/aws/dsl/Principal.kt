@@ -20,7 +20,7 @@ enum class PrincipalType(val textValue: String) {
 @Serializable(with = PrincipalSerializer::class)
 data class Principal internal constructor(
     val type: PrincipalType,
-    val values: List<String>
+    val principalIds: List<String>
 )
 
 private object PrincipalSerializer : KSerializer<Principal> {
@@ -29,10 +29,10 @@ private object PrincipalSerializer : KSerializer<Principal> {
         val descriptorIndex: Int = getIndexForType(value.type)
 
         val composite = encoder.beginStructure(descriptor)
-        if (value.values.size > 1) {
-            composite.encodeSerializableElement(descriptor, descriptorIndex, ListSerializer(String.serializer()), value.values)
+        if (value.principalIds.size > 1) {
+            composite.encodeSerializableElement(descriptor, descriptorIndex, ListSerializer(String.serializer()), value.principalIds)
         } else {
-            composite.encodeStringElement(descriptor, descriptorIndex, value.values.first())
+            composite.encodeStringElement(descriptor, descriptorIndex, value.principalIds.first())
         }
         composite.endStructure(descriptor)
     }
@@ -57,6 +57,7 @@ private object PrincipalSerializer : KSerializer<Principal> {
 
 fun Principal.toJson(): String = JsonEncoder.serialize(Principal.serializer(), this)
 
+@PolicyElementBuilder
 class PrincipalBuilder internal constructor() {
 
     private var type: PrincipalType? = null

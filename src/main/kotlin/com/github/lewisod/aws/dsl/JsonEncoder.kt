@@ -3,7 +3,7 @@ package com.github.lewisod.aws.dsl
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.Json
 
-object JsonEncoder {
+internal object JsonEncoder {
     private val encoder = Json {
         encodeDefaults = false
     }
