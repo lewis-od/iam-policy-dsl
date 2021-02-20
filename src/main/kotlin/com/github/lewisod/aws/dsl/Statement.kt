@@ -42,21 +42,20 @@ object StatementSerializer : KSerializer<Statement> {
             val principalIndex = calculateElementIndex(value.principal, 2)
             composite.encodeSerializableElement(descriptor, principalIndex, Principal.serializer(), value.principal.value)
         }
-        encodeActions(composite, value.action)
+        encodeList(composite, value.action, 4)
         if (value.resource != null) {
-            val resourceIndex = calculateElementIndex(value.resource, 6)
-            composite.encodeStringElement(descriptor, resourceIndex, value.resource.value)
+            encodeList(composite, value.resource, 6)
         }
         composite.endStructure(descriptor)
     }
 
-    private fun encodeActions(composite: CompositeEncoder, actionElement: ActionElement) {
-        val actionIndex = calculateElementIndex(actionElement, 4)
-        val actions = actionElement.value
-        if (actions.size > 1) {
-            composite.encodeSerializableElement(descriptor, actionIndex, ListSerializer(String.serializer()), actions)
+    private fun encodeList(composite: CompositeEncoder, element: NegatablePolicyElement<List<String>>, index: Int) {
+        val actionIndex = calculateElementIndex(element, index)
+        val values = element.value
+        if (values.size > 1) {
+            composite.encodeSerializableElement(descriptor, actionIndex, ListSerializer(String.serializer()), values)
         } else {
-            composite.encodeStringElement(descriptor, actionIndex, actions.first())
+            composite.encodeStringElement(descriptor, actionIndex, values.first())
         }
     }
 
@@ -128,22 +127,24 @@ class StatementBuilder internal constructor() {
      * Sets the [Resource](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html)
      * field of the statement
      */
-    fun resource(resource: String) {
-        if (this.resource != null) {
-            throw InvalidStatementException("A statement can only specify one Resource")
+    fun resource(vararg resource: String) {
+        if (this.resource != null && this.resource!!.value.isNotEmpty() && this.resource!!.isNegated) {
+            throw InvalidStatementException("A statement can only specify either Resource or NotResource")
         }
-        this.resource = ResourceElement(resource, isNegated = false)
+        val existingResources = if (this.resource != null) this.resource!!.value else listOf()
+        this.resource = ResourceElement(existingResources + resource, isNegated = false)
     }
 
     /**
      * Sets the [NotResource](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_notresource.html)
      * field of the statement
      */
-    fun notResource(resource: String) {
-        if (this.resource != null) {
-            throw InvalidStatementException("A statement can only specify one Resource")
+    fun notResource(vararg resources: String) {
+        if (this.resource != null && this.resource!!.value.isNotEmpty() && !this.resource!!.isNegated) {
+            throw InvalidStatementException("A statement can only specify either Resource or NotResource")
         }
-        this.resource = ResourceElement(resource, isNegated = true)
+        val existingResources = if (this.resource != null) this.resource!!.value else listOf()
+        this.resource = ResourceElement(existingResources + resources, isNegated = true)
     }
 
     /**

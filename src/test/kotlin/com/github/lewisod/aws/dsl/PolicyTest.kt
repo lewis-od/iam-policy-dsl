@@ -12,7 +12,7 @@ internal class PolicyTest {
             Effect.ALLOW,
             action = ActionElement(listOf("action")),
             sid = "sid",
-            resource = ResourceElement("resource"))
+            resource = ResourceElement(listOf("resource")))
         val expectedPolicy = Policy("version", listOf(statement))
 
         val policy = policy("version") {
@@ -32,7 +32,7 @@ internal class PolicyTest {
             Effect.ALLOW,
             action = ActionElement(listOf("action")),
             sid = "sid",
-            resource = ResourceElement("resource"))
+            resource = ResourceElement(listOf("resource")))
         val expectedPolicy = Policy("2012-10-17", listOf(statement))
 
         val policy = policy {
@@ -52,7 +52,7 @@ internal class PolicyTest {
             Effect.ALLOW,
             action = ActionElement(listOf("action")),
             sid = "sid",
-            resource = ResourceElement("resource"))
+            resource = ResourceElement(listOf("resource")))
         val policy = Policy("2012-10-17", listOf(statement))
 
         val expectedJson = """

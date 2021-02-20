@@ -27,7 +27,7 @@ internal class StatementTest {
             Effect.ALLOW,
             action = ActionElement(listOf("action1", "action2")),
             sid = "sid",
-            resource = ResourceElement("resource")
+            resource = ResourceElement(listOf("resource"))
         )
         assertThat(builtStatement).isEqualToComparingFieldByField(expectedStatement)
     }
@@ -75,7 +75,7 @@ internal class StatementTest {
         builder.resource("resource")
         assertThatThrownBy { builder.notResource("resource") }
             .isInstanceOf(InvalidStatementException::class.java)
-            .hasMessageContaining("A statement can only specify one Resource")
+            .hasMessageContaining("A statement can only specify either Resource or NotResource")
     }
 
     @Test
@@ -83,7 +83,7 @@ internal class StatementTest {
         builder.notResource("resource")
         assertThatThrownBy { builder.resource("resource") }
             .isInstanceOf(InvalidStatementException::class.java)
-            .hasMessageContaining("A statement can only specify one Resource")
+            .hasMessageContaining("A statement can only specify either Resource or NotResource")
     }
 
     @Test
@@ -144,7 +144,7 @@ internal class StatementTest {
             Effect.ALLOW,
             action = ActionElement(listOf("action1", "action2")),
             sid = "sid",
-            resource = ResourceElement("resource")
+            resource = ResourceElement(listOf("resource"))
         )
         val expectedJson = """
             {
@@ -191,7 +191,7 @@ internal class StatementTest {
             action = ActionElement(listOf("action1", "action2"), isNegated = true),
             sid = "sid",
             principal = PrincipalElement(principal, isNegated = true),
-            resource = ResourceElement("resource", isNegated = true)
+            resource = ResourceElement(listOf("resource"), isNegated = true)
         )
         val expectedJson = """
             {
@@ -200,6 +200,29 @@ internal class StatementTest {
               "NotAction": ["action1", "action2"],
               "NotPrincipal": { "AWS": "account" },
               "NotResource": "resource"
+            }
+        """.trimIndent()
+
+        val actualJson = statement.toJson()
+
+        JSONAssert.assertEquals(expectedJson, actualJson, true)
+    }
+
+    @Test
+    fun `With multiple Resources serializes to JSON correctly`() {
+        val principal = Principal(PrincipalType.AWS, listOf("account"))
+        val statement = Statement(
+            Effect.ALLOW,
+            action = ActionElement(listOf("action1", "action2")),
+            sid = "sid",
+            resource = ResourceElement(listOf("resource1", "resource2"))
+        )
+        val expectedJson = """
+            {
+              "Sid": "sid",
+              "Effect": "Allow",
+              "Action": ["action1", "action2"],
+              "Resource": ["resource1", "resource2"]
             }
         """.trimIndent()
 
