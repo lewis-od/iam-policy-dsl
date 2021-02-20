@@ -2,8 +2,6 @@ package com.github.lewisod.aws.dsl
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import java.util.Collections
 
 @Serializable
@@ -19,20 +17,22 @@ enum class Effect {
 data class Statement internal constructor(
     @SerialName("Sid") val sid: String,
     @SerialName("Effect") val effect: Effect,
+    @SerialName("Principal") val principal: Principal? = null,
     @SerialName("Action") val action: List<String>,
-    @SerialName("Resource") val resource: String
+    @SerialName("Resource") val resource: String? = null
 )
 
 /**
  * Convert the [Statement] to it's AWS-compliant JSON
  */
-fun Statement.toJson(): String = Json.encodeToString(this)
+fun Statement.toJson(): String = JsonEncoder.serialize(Statement.serializer(), this)
 
 class StatementBuilder internal constructor() {
 
     private var effect: Effect? = null
     private val actions = mutableListOf<String>()
     private var resource: String? = null
+    private var principal: Principal? = null
 
     /**
      * Sets the [effect](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html) field
@@ -44,13 +44,27 @@ class StatementBuilder internal constructor() {
      * Sets the [action](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_action.html) field
      * of the statement
      */
-    fun action(action: String) { this.actions.add(action) }
+    fun action(vararg actions: String) { this.actions.addAll(actions) }
 
     /**
      * Sets the [resource](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_resource.html)
      * field of the statement
      */
     fun resource(resource: String) { this.resource = resource }
+
+    /**
+     * Sets the [principal](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_principal.html)
+     * field of the statement
+     */
+    fun principal(principalBuilderBlock: PrincipalBuilder.() -> Unit) {
+        if (this.principal != null) {
+            throw InvalidStatementException("A statement can only have one policy")
+        }
+
+        val builder = PrincipalBuilder()
+        principalBuilderBlock.invoke(builder)
+        this.principal = builder.build()
+    }
 
     internal fun build(sid: String): Statement {
         if (actions.isEmpty()) {
@@ -60,8 +74,9 @@ class StatementBuilder internal constructor() {
         return Statement(
             sid,
             effect ?: throw InvalidStatementException("Statement must specify an effect"),
+            principal,
             Collections.unmodifiableList(actions),
-            resource ?: throw InvalidStatementException("Statement must specify a resource")
+            resource
         )
     }
 }

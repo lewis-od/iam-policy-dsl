@@ -2,16 +2,13 @@ package com.github.lewisod.aws.dsl
 
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.descriptors.element
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.json.Json
 
 enum class PrincipalType(val textValue: String) {
     AWS("AWS"),
@@ -58,31 +55,43 @@ object PrincipalSerializer : KSerializer<Principal> {
     }
 }
 
-fun Principal.toJson(): String = Json.encodeToString(this)
+fun Principal.toJson(): String = JsonEncoder.serialize(Principal.serializer(), this)
 
 class PrincipalBuilder internal constructor() {
 
     private var type: PrincipalType? = null
     private var values: List<String> = listOf()
 
+    /**
+     * Set a principal of type "AWS"
+     */
     fun aws(vararg values: String) {
         checkTypeNotAlreadySpecified()
         this.type = PrincipalType.AWS
         this.values = values.asList()
     }
 
+    /**
+     * Set a principal of type "CanonicalUser"
+     */
     fun canonicalUser(value: String) {
         checkTypeNotAlreadySpecified()
         this.type = PrincipalType.CANONICAL_USER
         this.values = listOf(value)
     }
 
+    /**
+     * Set a principal of type "Federated"
+     */
     fun federated(value: String) {
         checkTypeNotAlreadySpecified()
         this.type = PrincipalType.FEDERATED
         this.values = listOf(value)
     }
 
+    /**
+     * Set a principal of type "Service"
+     */
     fun service(vararg values: String) {
         checkTypeNotAlreadySpecified()
         this.type = PrincipalType.SERVICE
