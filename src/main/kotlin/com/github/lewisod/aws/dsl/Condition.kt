@@ -2,6 +2,7 @@ package com.github.lewisod.aws.dsl
 
 typealias ConditionEntry = Map<String, List<String>>
 
+@PolicyElementBuilder
 class ConditionEntryBuilder {
 
     private val conditionEntryMap = mutableMapOf<String, List<String>>()

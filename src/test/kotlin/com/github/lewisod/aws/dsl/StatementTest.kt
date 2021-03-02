@@ -25,6 +25,9 @@ internal class StatementTest {
         builder.condition("StringEquals") {
             "aws:arn" to ("arn1" or "arn2")
         }
+        builder.condition("NumericLessThanEquals") {
+            "aws:MultiFactorAuthAge" to "3600"
+        }
         val builtStatement = builder.build("sid")
 
         val expectedStatement = Statement(
@@ -33,8 +36,9 @@ internal class StatementTest {
             sid = "sid",
             resource = ResourceElement(listOf("resource")),
             principal = PrincipalElement(Principal(PrincipalType.SERVICE, listOf("service"))),
-            condition = mapOf("StringEquals" to mapOf("aws:arn" to listOf("arn1", "arn2")))
-        )
+            condition = mapOf(
+                "StringEquals" to mapOf("aws:arn" to listOf("arn1", "arn2")),
+                "NumericLessThanEquals" to mapOf("aws:MultiFactorAuthAge" to listOf("3600"))))
         assertThat(builtStatement).isEqualToComparingFieldByField(expectedStatement)
     }
 

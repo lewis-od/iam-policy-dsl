@@ -186,6 +186,10 @@ class StatementBuilder internal constructor() {
         this.principal = PrincipalElement(builder.build(), isNegated)
     }
 
+    /**
+     * Adds an entry to the [Condition](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html)
+     * map of the statement
+     */
     fun condition(operator: String, init: ConditionEntryBuilder.() -> Unit) {
         val builder = ConditionEntryBuilder()
         builder.init()
