@@ -4,6 +4,7 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.buildClassSerialDescriptor
@@ -27,10 +28,15 @@ data class Statement internal constructor(
     val action: ActionElement,
     val sid: String? = null,
     val principal: PrincipalElement? = null,
-    val resource: ResourceElement? = null
+    val resource: ResourceElement? = null,
+    val condition: Condition? = null
 )
 
 object StatementSerializer : KSerializer<Statement> {
+
+    private val conditionSerializer = MapSerializer(
+            String.serializer(),
+            MapSerializer(String.serializer(), ListSerializer(String.serializer())))
 
     override fun serialize(encoder: Encoder, value: Statement) {
         val composite = encoder.beginStructure(descriptor)
@@ -45,6 +51,13 @@ object StatementSerializer : KSerializer<Statement> {
         encodeList(composite, value.action, 4)
         if (value.resource != null) {
             encodeList(composite, value.resource, 6)
+        }
+        if (value.condition != null) {
+            composite.encodeSerializableElement(
+                    descriptor,
+                    8,
+                    conditionSerializer,
+                    value.condition)
         }
         composite.endStructure(descriptor)
     }
@@ -74,6 +87,7 @@ object StatementSerializer : KSerializer<Statement> {
         element<List<String>>("NotAction", isOptional = true)
         element<String>("Resource", isOptional = true)
         element<String>("NotResource", isOptional = true)
+        element<String>("Condition", isOptional = true)
     }
 }
 
@@ -89,6 +103,7 @@ class StatementBuilder internal constructor() {
     private var actions: ActionElement = ActionElement(mutableListOf(), isNegated = false)
     private var resource: ResourceElement? = null
     private var principal: PrincipalElement? = null
+    private val conditionMap = mutableMapOf<String, ConditionEntry>()
 
     /**
      * Sets the [Effect](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_effect.html) field
@@ -171,6 +186,16 @@ class StatementBuilder internal constructor() {
         this.principal = PrincipalElement(builder.build(), isNegated)
     }
 
+    /**
+     * Adds an entry to the [Condition](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_elements_condition.html)
+     * map of the statement
+     */
+    fun condition(operator: String, init: ConditionEntryBuilder.() -> Unit) {
+        val builder = ConditionEntryBuilder()
+        builder.init()
+        conditionMap[operator] = builder.build()
+    }
+
     internal fun build(sid: String?): Statement {
         if (actions.value.isEmpty()) {
             throw InvalidStatementException("A statement must contain at least 1 Action")
@@ -181,7 +206,8 @@ class StatementBuilder internal constructor() {
             actions,
             sid,
             principal,
-            resource
+            resource,
+            if (conditionMap.isNotEmpty()) conditionMap.toMap() else null
         )
     }
 }

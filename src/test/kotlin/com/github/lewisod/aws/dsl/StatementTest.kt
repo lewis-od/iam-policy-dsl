@@ -21,14 +21,24 @@ internal class StatementTest {
         builder.effect(Effect.ALLOW)
         builder.action("action1")
         builder.action("action2")
+        builder.principal { service("service") }
+        builder.condition("StringEquals") {
+            "aws:arn" to ("arn1" or "arn2")
+        }
+        builder.condition("NumericLessThanEquals") {
+            "aws:MultiFactorAuthAge" to "3600"
+        }
         val builtStatement = builder.build("sid")
 
         val expectedStatement = Statement(
             Effect.ALLOW,
             action = ActionElement(listOf("action1", "action2")),
             sid = "sid",
-            resource = ResourceElement(listOf("resource"))
-        )
+            resource = ResourceElement(listOf("resource")),
+            principal = PrincipalElement(Principal(PrincipalType.SERVICE, listOf("service"))),
+            condition = mapOf(
+                "StringEquals" to mapOf("aws:arn" to listOf("arn1", "arn2")),
+                "NumericLessThanEquals" to mapOf("aws:MultiFactorAuthAge" to listOf("3600"))))
         assertThat(builtStatement).isEqualToComparingFieldByField(expectedStatement)
     }
 
@@ -125,6 +135,10 @@ internal class StatementTest {
             action = ActionElement(listOf("action")),
             sid = "sid"
         )
+
+        val actualJson = statement.toJson()
+
+        //language=json
         val expectedJson = """
             {
               "Sid": "sid",
@@ -132,9 +146,6 @@ internal class StatementTest {
               "Action": "action"
             }
         """.trimIndent()
-
-        val actualJson = statement.toJson()
-
         JSONAssert.assertEquals(expectedJson, actualJson, true)
     }
 
@@ -146,6 +157,10 @@ internal class StatementTest {
             sid = "sid",
             resource = ResourceElement(listOf("resource"))
         )
+
+        val actualJson = statement.toJson()
+
+        //language=json
         val expectedJson = """
             {
               "Sid": "sid",
@@ -154,9 +169,6 @@ internal class StatementTest {
               "Resource": "resource"
             }
         """.trimIndent()
-
-        val actualJson = statement.toJson()
-
         JSONAssert.assertEquals(expectedJson, actualJson, true)
     }
 
@@ -169,6 +181,10 @@ internal class StatementTest {
             sid = "sid",
             principal = PrincipalElement(principal)
         )
+
+        val actualJson = statement.toJson()
+
+        //language=json
         val expectedJson = """
             {
               "Sid": "sid",
@@ -177,9 +193,6 @@ internal class StatementTest {
               "Principal": { "AWS": "account" }
             }
         """.trimIndent()
-
-        val actualJson = statement.toJson()
-
         JSONAssert.assertEquals(expectedJson, actualJson, true)
     }
 
@@ -193,6 +206,10 @@ internal class StatementTest {
             principal = PrincipalElement(principal, isNegated = true),
             resource = ResourceElement(listOf("resource"), isNegated = true)
         )
+
+        val actualJson = statement.toJson()
+
+        //language=json
         val expectedJson = """
             {
               "Sid": "sid",
@@ -202,9 +219,6 @@ internal class StatementTest {
               "NotResource": "resource"
             }
         """.trimIndent()
-
-        val actualJson = statement.toJson()
-
         JSONAssert.assertEquals(expectedJson, actualJson, true)
     }
 
@@ -217,6 +231,10 @@ internal class StatementTest {
             sid = "sid",
             resource = ResourceElement(listOf("resource1", "resource2"))
         )
+
+        val actualJson = statement.toJson()
+
+        //language=json
         val expectedJson = """
             {
               "Sid": "sid",
@@ -225,9 +243,31 @@ internal class StatementTest {
               "Resource": ["resource1", "resource2"]
             }
         """.trimIndent()
+        JSONAssert.assertEquals(expectedJson, actualJson, true)
+    }
+
+    @Test
+    fun `With Condition serializes to JSON correctly`() {
+        val statement = Statement(
+            Effect.ALLOW,
+            sid = "sid",
+            action = ActionElement(listOf("action")),
+            condition = mapOf("StringEquals" to mapOf("aws:arn" to listOf("my arn")))
+        )
 
         val actualJson = statement.toJson()
 
+        //language=json
+        val expectedJson = """
+            {
+              "Sid": "sid",
+              "Effect": "Allow",
+              "Action": "action",
+              "Condition": {
+                "StringEquals": { "aws:arn": ["my arn"] }
+              }
+            }
+        """.trimIndent()
         JSONAssert.assertEquals(expectedJson, actualJson, true)
     }
 }
