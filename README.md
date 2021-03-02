@@ -4,7 +4,7 @@ A Kotlin DSL for creating AWS IAM Policy documents
 ## Usage
 Add to your Gradle dependencies as:
 ```kotlin
-implementation("com.github.lewis-od:iam-policy-dsl:1.0")
+implementation("com.github.lewis-od:iam-policy-dsl:1.1")
 ```
 
 The DSL can then be used like:
